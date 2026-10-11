@@ -1,5 +1,4 @@
 import crypto from "crypto";
-import type { Busy, Schedule } from "./availability";
 
 const API = "https://api.calendly.com";
 
@@ -40,21 +39,6 @@ export async function listOrgMembers(org: string) {
     pageToken = res.pagination?.next_page_token ?? undefined;
   } while (pageToken);
   return rows;
-}
-
-export async function getDefaultSchedule(userUri: string): Promise<Schedule | null> {
-  const res = await calendly<{ collection: (Schedule & { default: boolean })[] }>("/user_availability_schedules", { params: { user: userUri } });
-  return res.collection.find((s) => s.default) ?? res.collection[0] ?? null;
-}
-
-export async function getBusy(userUri: string, startMs: number, endMs: number): Promise<Busy[]> {
-  const res = await calendly<any>("/user_busy_times", {
-    params: { user: userUri, start_time: new Date(startMs).toISOString(), end_time: new Date(endMs).toISOString() },
-  });
-  return res.collection.map((b: any) => ({
-    start: new Date(b.buffered_start_time ?? b.start_time).getTime(),
-    end: new Date(b.buffered_end_time ?? b.end_time).getTime(),
-  }));
 }
 
 export const WEBHOOK_EVENTS = ["routing_form_submission.created", "invitee.created", "invitee.canceled"];

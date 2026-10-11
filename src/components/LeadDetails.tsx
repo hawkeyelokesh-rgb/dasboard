@@ -16,20 +16,20 @@ const FIELDS: [keyof Lead, string][] = [
 
 export function StatusBadge({ s }: { s: string }) {
   const c = s === "booked" ? "bg-green-100 text-green-800" : s === "canceled" ? "bg-red-100 text-red-800" : "bg-amber-100 text-amber-800";
-  return <span className={`px-2 py-0.5 rounded text-xs ${c}`}>{s}</span>;
+  return <span className={`badge ${c}`}>{s}</span>;
 }
 
 export default function LeadDetails({ l, showHost = true }: { l: Lead; showHost?: boolean }) {
   return (
     <dl className="grid sm:grid-cols-2 gap-x-6 gap-y-2 text-sm">
-      <div><dt className="text-slate-500">Email</dt><dd>{l.email ?? "-"}</dd></div>
-      <div><dt className="text-slate-500">Submitted</dt><dd>{fmtDateTime(l.submitted_at)}</dd></div>
-      {showHost && <div><dt className="text-slate-500">Host</dt><dd>{l.host_name ?? "-"} {l.host_email ? `(${l.host_email})` : ""}</dd></div>}
-      <div><dt className="text-slate-500">Event</dt><dd>{l.event_name ?? "-"}</dd></div>
+      <div><dt className="text-ink-400">Email</dt><dd>{l.email ?? "-"}</dd></div>
+      <div><dt className="text-ink-400">Submitted</dt><dd>{fmtDateTime(l.submitted_at)}</dd></div>
+      {showHost && <div><dt className="text-ink-400">Host</dt><dd>{l.host_name ?? "-"} {l.host_email ? `(${l.host_email})` : ""}</dd></div>}
+      <div><dt className="text-ink-400">Event</dt><dd>{l.event_name ?? "-"}</dd></div>
       {FIELDS.map(([k, label]) => (
-        <div key={k}><dt className="text-slate-500">{label}</dt><dd className="whitespace-pre-wrap">{(l[k] as string) || "-"}</dd></div>
+        <div key={k}><dt className="text-ink-400">{label}</dt><dd className="whitespace-pre-wrap">{(l[k] as string) || "-"}</dd></div>
       ))}
-      {l.meeting_url && <div><dt className="text-slate-500">Meeting link</dt><dd><a className="text-blue-700 underline" href={l.meeting_url} target="_blank">Open</a></dd></div>}
+      {l.meeting_url && <div><dt className="text-ink-400">Meeting link</dt><dd><a className="link" href={l.meeting_url} target="_blank">Open</a></dd></div>}
     </dl>
   );
 }

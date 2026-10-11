@@ -14,7 +14,8 @@ create table if not exists public.profiles (
 -- Calendly team members (closers). Used for availability and host matching.
 create table if not exists public.hosts (
   id uuid primary key default gen_random_uuid(),
-  name text not null,
+  name text not null,                        -- raw name as Calendly reports it; overwritten on every sync
+  display_name text,                         -- admin-set override shown everywhere instead of `name`; sync never touches this
   email text not null unique,
   calendly_user_uri text unique,
   active boolean not null default true,      -- shown in the availability view

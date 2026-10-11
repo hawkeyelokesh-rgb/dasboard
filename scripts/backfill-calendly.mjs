@@ -128,6 +128,17 @@ async function upsertLeads(rows) {
 // from the same email grabbing the same booking.
 const claimedEvents = new Set();
 
+// email -> display_name override set on the Team page, so backfilled rows show the same
+// name as live bookings instead of Calendly's raw account name.
+let hostNameOverrides = null;
+async function loadHostNameOverrides() {
+  const res = await fetch(`${SUPABASE_URL}/rest/v1/hosts?select=email,display_name&display_name=not.is.null`, {
+    headers: { apikey: SERVICE_KEY, Authorization: `Bearer ${SERVICE_KEY}` },
+  });
+  const rows = await res.json();
+  hostNameOverrides = new Map(rows.map((r) => [r.email.toLowerCase(), r.display_name]));
+}
+
 async function resolveBooking(org, email, submittedAtMs) {
   if (!email) return null;
   const qs = new URLSearchParams({ organization: org, invitee_email: email, count: "25" });
@@ -141,11 +152,12 @@ async function resolveBooking(org, email, submittedAtMs) {
   if (!best) return null;
   claimedEvents.add(best.uri);
   const host = best.event_memberships?.[0];
+  const hostEmail = host?.user_email ? String(host.user_email).toLowerCase() : null;
   return {
     event_uri: best.uri,
     event_name: best.name ?? null,
-    host_name: host?.user_name ?? null,
-    host_email: host?.user_email ? String(host.user_email).toLowerCase() : null,
+    host_name: (hostEmail && hostNameOverrides.get(hostEmail)) || host?.user_name || null,
+    host_email: hostEmail,
     call_start: best.start_time ?? null,
     call_end: best.end_time ?? null,
     meeting_url: best.location?.join_url ?? null,
@@ -200,6 +212,7 @@ async function backfillForm(org, formUri, formName) {
 }
 
 async function main() {
+  await loadHostNameOverrides();
   const me = (await calendlyFetch("https://api.calendly.com/users/me")).resource;
   console.log(`Calendly account: ${me.email}`);
 

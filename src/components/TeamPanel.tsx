@@ -35,17 +35,17 @@ export default function TeamPanel({ hosts, logins, events }: { hosts: any[]; log
       <section className="bg-white rounded-lg shadow-sm p-4">
         <h2 className="font-semibold mb-2">Hosts</h2>
         <table className="w-full text-sm">
-          <thead><tr className="text-left text-slate-500"><th>Name</th><th>Email</th><th>Active (closer)</th><th>Login</th></tr></thead>
+          <thead><tr className="text-left text-slate-500"><th>Name</th><th>Email</th><th>Login</th></tr></thead>
           <tbody>
             {hosts.map((h) => (
               <tr key={h.id} className="border-t">
-                <td className="py-2">{h.name}</td><td>{h.email}</td>
-                <td><input type="checkbox" defaultChecked={h.active} onChange={(e) => act("/api/admin/host-active", { id: h.id, active: e.target.checked }, () => "Saved.")} /></td>
+                <td className="py-2"><NameCell host={h} onSaved={() => router.refresh()} /></td>
+                <td>{h.email}</td>
                 <td>{logins[h.email.toLowerCase()] ? <span className="text-green-700">{logins[h.email.toLowerCase()]}</span>
-                  : <button className="underline" onClick={() => setForm({ email: h.email, name: h.name, password: "", role: "host" })}>Create login</button>}</td>
+                  : <button className="underline" onClick={() => setForm({ email: h.email, name: h.display_name || h.name, password: "", role: "host" })}>Create login</button>}</td>
               </tr>
             ))}
-            {hosts.length === 0 && <tr><td className="py-2 text-slate-500" colSpan={4}>No hosts yet. Click "Sync hosts from Calendly".</td></tr>}
+            {hosts.length === 0 && <tr><td className="py-2 text-slate-500" colSpan={3}>No hosts yet. Click "Sync hosts from Calendly".</td></tr>}
           </tbody>
         </table>
         <button className="underline text-sm mt-3" onClick={() => setForm({ email: "", name: "", password: "", role: "host" })}>Create another login</button>
@@ -73,5 +73,35 @@ export default function TeamPanel({ hosts, logins, events }: { hosts: any[]; log
         )}
       </section>
     </div>
+  );
+}
+
+/** Click the name to rename what this host shows as everywhere (Availability, Leads, Overview) instead of Calendly's raw account name. */
+function NameCell({ host, onSaved }: { host: any; onSaved: () => void }) {
+  const [editing, setEditing] = useState(false);
+  const [value, setValue] = useState(host.display_name || host.name);
+  const [busy, setBusy] = useState(false);
+
+  async function save() {
+    setBusy(true);
+    const { ok } = await post("/api/admin/host-name", { id: host.id, display_name: value });
+    setBusy(false);
+    if (ok) { setEditing(false); onSaved(); }
+  }
+
+  if (!editing) {
+    return (
+      <button className="hover:underline text-left" onClick={() => setEditing(true)} title="Click to rename">
+        {host.display_name || host.name}
+        {host.display_name && host.display_name !== host.name && <span className="text-slate-400"> (Calendly: {host.name})</span>}
+      </button>
+    );
+  }
+  return (
+    <span className="flex items-center gap-1">
+      <input className="border rounded px-2 py-0.5" value={value} onChange={(e) => setValue(e.target.value)} disabled={busy} autoFocus />
+      <button className="underline" onClick={save} disabled={busy}>Save</button>
+      <button className="underline text-slate-500" onClick={() => { setValue(host.display_name || host.name); setEditing(false); }} disabled={busy}>Cancel</button>
+    </span>
   );
 }

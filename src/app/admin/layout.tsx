@@ -1,21 +1,20 @@
-import Link from "next/link";
 import { requireRole } from "@/lib/auth";
 import SignOut from "@/components/SignOut";
+import Logo from "@/components/Logo";
+import NavLinks from "@/components/NavLinks";
 
 export const dynamic = "force-dynamic";
 
 export default async function AdminLayout({ children }: { children: React.ReactNode }) {
   const p = await requireRole("admin");
-  const nav = [["/admin", "Overview"], ["/admin/availability", "Availability"], ["/admin/leads", "Leads"], ["/admin/team", "Team"]];
+  const nav: [string, string][] = [["/admin", "Overview"], ["/admin/availability", "Availability"], ["/admin/leads", "Leads"], ["/admin/team", "Team"]];
   return (
-    <div className="min-h-screen bg-slate-50">
-      <header className="bg-white border-b">
+    <div className="min-h-screen bg-ink-50">
+      <header className="bg-white border-b border-ink-100">
         <div className="max-w-6xl mx-auto px-4 py-3 flex flex-wrap items-center gap-4">
-          <span className="font-semibold">Altira Dashboard</span>
-          <nav className="flex gap-4 text-sm flex-1">
-            {nav.map(([h, t]) => <Link key={h} href={h} className="hover:underline">{t}</Link>)}
-          </nav>
-          <span className="text-sm text-slate-500">{p.email}</span>
+          <Logo />
+          <NavLinks items={nav} />
+          <span className="text-sm text-ink-400">{p.email}</span>
           <SignOut />
         </div>
       </header>

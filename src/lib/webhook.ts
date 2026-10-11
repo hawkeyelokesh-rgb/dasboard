@@ -9,6 +9,8 @@ export interface LeadStore {
   findOpenLeadByEmail(emailLower: string): Promise<LeadRow | null>;
   insert(row: LeadRow): Promise<void>;
   update(id: string, patch: LeadRow): Promise<void>;
+  /** The host's display name override (set on the Team page), or `fallback` (Calendly's own name) if none is set. */
+  resolveHostName(hostEmail: string | null, fallback: string | null): Promise<string | null>;
 }
 
 export type CalendlyEnvelope = { event: string; payload: any; created_at?: string };
@@ -35,13 +37,14 @@ export async function handleCalendlyEvent(env: CalendlyEnvelope, store: LeadStor
   if (env.event === "invitee.created") {
     const se = p.scheduled_event ?? {};
     const host = se.event_memberships?.[0];
+    const hostEmail = host?.user_email ? String(host.user_email).toLowerCase() : null;
     const patch: LeadRow = {
       invitee_uri: p.uri ?? null,
       event_uri: se.uri ?? p.event ?? null,
       status: "booked",
       event_name: se.name ?? null,
-      host_name: host?.user_name ?? null,
-      host_email: host?.user_email ? String(host.user_email).toLowerCase() : null,
+      host_name: await store.resolveHostName(hostEmail, host?.user_name ?? null),
+      host_email: hostEmail,
       call_start: se.start_time ?? null,
       call_end: se.end_time ?? null,
       meeting_url: se.location?.join_url ?? null,

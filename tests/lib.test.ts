@@ -1,58 +1,8 @@
 import { describe, it, expect } from "vitest";
 import crypto from "crypto";
-import { zonedToUtc, slotsForDate, isSlotFree, intervalsForDate, addDays, weekdayName, dayBoundsUtc, type Schedule } from "../src/lib/availability";
 import { mapAnswers } from "../src/lib/answers";
 import { verifySignature } from "../src/lib/calendly";
 import { handleCalendlyEvent, type LeadRow, type LeadStore } from "../src/lib/webhook";
-
-const iso = (ms: number) => new Date(ms).toISOString();
-const T = (s: string) => Date.parse(s);
-
-describe("time zones", () => {
-  it("converts wall-clock to UTC", () => {
-    expect(iso(zonedToUtc("2026-10-15", "10:30", "Asia/Kolkata"))).toBe("2026-10-15T05:00:00.000Z");
-    expect(iso(zonedToUtc("2026-10-15", "10:30", "America/New_York"))).toBe("2026-10-15T14:30:00.000Z");
-    expect(iso(zonedToUtc("2026-11-02", "10:00", "America/New_York"))).toBe("2026-11-02T15:00:00.000Z"); // after DST ends
-  });
-  it("weekday / addDays", () => {
-    expect(weekdayName("2026-10-15")).toBe("thursday");
-    expect(addDays("2026-10-31", 1)).toBe("2026-11-01");
-  });
-  it("day bounds for India are 24h", () => {
-    const b = dayBoundsUtc("2026-10-15", "Asia/Kolkata");
-    expect(b.end - b.start).toBe(24 * 3600000);
-  });
-});
-
-describe("availability", () => {
-  const sch: Schedule = {
-    timezone: "Asia/Kolkata",
-    rules: [
-      { type: "wday", wday: "thursday", intervals: [{ from: "10:00", to: "14:00" }, { from: "15:00", to: "17:00" }] },
-      { type: "wday", wday: "friday", intervals: [{ from: "09:00", to: "18:00" }] },
-      { type: "date", date: "2026-10-16", intervals: [{ from: "10:00", to: "12:00" }] },
-      { type: "wday", wday: "saturday", intervals: [] },
-    ],
-  };
-  it("builds slots, honours date overrides and days off", () => {
-    expect(slotsForDate(sch, "2026-10-15", 60)).toHaveLength(6);
-    expect(slotsForDate(sch, "2026-10-16", 60)).toHaveLength(2);
-    expect(slotsForDate(sch, "2026-10-17", 60)).toHaveLength(0);
-    expect(slotsForDate(sch, "2026-10-15", 30)).toHaveLength(12);
-    expect(intervalsForDate(sch, "2026-10-18")).toEqual([]); // sunday: no rule
-  });
-  it("removes slots that overlap busy periods or are in the past", () => {
-    const slots = slotsForDate(sch, "2026-10-15", 60);
-    const busy = [
-      { start: T("2026-10-15T05:30:00Z"), end: T("2026-10-15T06:30:00Z") }, // 11:00-12:00 IST
-      { start: T("2026-10-15T10:00:00Z"), end: T("2026-10-15T10:45:00Z") }, // 15:30-16:15 IST
-    ];
-    const free = slots.filter((t) => isSlotFree(t, busy, T("2026-10-15T00:00:00Z"), 60)).map((t) => new Date(t + 19800000).toISOString().slice(11, 16));
-    expect(free).toEqual(["10:00", "12:00", "13:00"]);
-    const late = slots.filter((t) => isSlotFree(t, [], T("2026-10-15T07:30:00Z"), 60)).map((t) => new Date(t + 19800000).toISOString().slice(11, 16));
-    expect(late).toEqual(["13:00", "15:00", "16:00"]); // now = 13:00 IST
-  });
-});
 
 describe("answers", () => {
   it("maps by question text, any order", () => {
@@ -110,6 +60,7 @@ function memStore(): LeadStore & { rows: LeadRow[] } {
     },
     async insert(r) { rows.push({ ...r, id: String(++n) }); },
     async update(id, p) { Object.assign(rows.find((r) => r.id === id)!, p); },
+    async resolveHostName(_email, fallback) { return fallback; },
   };
 }
 

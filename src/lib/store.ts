@@ -21,5 +21,10 @@ export function supabaseStore(): LeadStore {
       const { error } = await db.from("leads").update(patch).eq("id", id);
       if (error) throw new Error(error.message);
     },
+    resolveHostName: async (hostEmail, fallback) => {
+      if (!hostEmail) return fallback;
+      const { data } = await db.from("hosts").select("display_name").eq("email", hostEmail).maybeSingle();
+      return data?.display_name || fallback;
+    },
   };
 }

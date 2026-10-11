@@ -29,22 +29,25 @@ export default async function Overview() {
     <div className="space-y-6">
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
         {stats.map(([t, n]) => (
-          <div key={t as string} className="bg-white rounded-lg shadow-sm p-4"><div className="text-2xl font-semibold">{n}</div><div className="text-sm text-slate-500">{t}</div></div>
+          <div key={t as string} className="card border-t-2 border-t-gold-500">
+            <div className="text-2xl font-semibold text-ink-900">{n}</div>
+            <div className="text-sm text-ink-400">{t}</div>
+          </div>
         ))}
       </div>
-      <section className="bg-white rounded-lg shadow-sm p-4">
-        <h2 className="font-semibold mb-2">Today's meetings</h2>
-        {(todays ?? []).length === 0 ? <p className="text-sm text-slate-500">None.</p> : (
+      <section className="card">
+        <h2 className="font-semibold mb-3 text-ink-900">Today's meetings</h2>
+        {(todays ?? []).length === 0 ? <p className="text-sm text-ink-400">None.</p> : (
           <table className="w-full text-sm"><tbody>
             {todays!.map((m: any) => (
-              <tr key={m.id} className="border-t"><td className="py-2 pr-3">{fmtTime(m.call_start)}</td><td className="pr-3">{m.name}</td><td className="pr-3">{m.event_name}</td><td className="pr-3">{m.host_name}</td><td><StatusBadge s={m.status} /></td></tr>
+              <tr key={m.id} className="border-t border-ink-100"><td className="py-2 pr-3">{fmtTime(m.call_start)}</td><td className="pr-3">{m.name}</td><td className="pr-3">{m.event_name}</td><td className="pr-3">{m.host_name}</td><td><StatusBadge s={m.status} /></td></tr>
             ))}
           </tbody></table>
         )}
       </section>
-      <section className="bg-white rounded-lg shadow-sm p-4">
-        <h2 className="font-semibold mb-2">Meetings per host (next 7 days)</h2>
-        {Object.keys(perHost).length === 0 ? <p className="text-sm text-slate-500">None.</p> : (
+      <section className="card">
+        <h2 className="font-semibold mb-3 text-ink-900">Meetings per host (next 7 days)</h2>
+        {Object.keys(perHost).length === 0 ? <p className="text-sm text-ink-400">None.</p> : (
           <ul className="text-sm space-y-1">{Object.entries(perHost).sort((a, b) => b[1] - a[1]).map(([h, n]) => <li key={h}>{h}: <b>{n}</b></li>)}</ul>
         )}
       </section>

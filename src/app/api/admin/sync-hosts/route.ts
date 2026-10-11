@@ -9,7 +9,7 @@ export async function POST() {
     const me = await getMe();
     const members = await listOrgMembers(me.current_organization);
     const db = adminClient();
-    // Keep the "active" flag of existing hosts: only upsert name + uri, new rows start inactive.
+    // Resync only touches the raw Calendly name + uri; display_name (admin override) is never overwritten.
     const { data: existing } = await db.from("hosts").select("email");
     const have = new Set((existing ?? []).map((h: any) => h.email.toLowerCase()));
     let added = 0;
@@ -18,7 +18,7 @@ export async function POST() {
       if (have.has(email)) {
         await db.from("hosts").update({ name: m.name, calendly_user_uri: m.uri }).eq("email", email);
       } else {
-        await db.from("hosts").insert({ name: m.name, email, calendly_user_uri: m.uri, active: false });
+        await db.from("hosts").insert({ name: m.name, email, calendly_user_uri: m.uri });
         added++;
       }
     }

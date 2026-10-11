@@ -4,6 +4,7 @@ import type { Metadata } from "next";
 export const metadata: Metadata = {
   title: "Altira Dashboard",
   description: "Leads, bookings and closer availability",
+  icons: { icon: "/logo.png" },
   robots: {
     index: false,
     follow: false,
