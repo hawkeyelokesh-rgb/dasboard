@@ -6,7 +6,7 @@ export const dynamic = "force-dynamic";
 
 export default async function AdminLayout({ children }: { children: React.ReactNode }) {
   const p = await requireRole("admin");
-  const nav = [["/admin", "Overview"], ["/admin/availability", "Availability"], ["/admin/leads", "Leads"], ["/admin/team", "Team"], ["/admin/import", "Import"]];
+  const nav = [["/admin", "Overview"], ["/admin/availability", "Availability"], ["/admin/leads", "Leads"], ["/admin/team", "Team"]];
   return (
     <div className="min-h-screen bg-slate-50">
       <header className="bg-white border-b">
