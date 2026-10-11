@@ -1,6 +1,7 @@
 "use client";
 import { useState } from "react";
 import { browserClient } from "@/lib/supabase/browser";
+import Logo from "@/components/Logo";
 
 export default function Login() {
   const [email, setEmail] = useState("");
@@ -17,14 +18,17 @@ export default function Login() {
   }
 
   return (
-    <main className="min-h-screen flex items-center justify-center bg-slate-50 p-4">
-      <form onSubmit={submit} className="w-full max-w-sm bg-white rounded-xl shadow p-6 space-y-4">
-        <h1 className="text-xl font-semibold">Altira Dashboard</h1>
-        <p className="text-sm text-slate-500">Sign in with your email and password.</p>
-        <input className="w-full border rounded px-3 py-2" type="email" placeholder="Email" value={email} onChange={(e) => setEmail(e.target.value)} required />
-        <input className="w-full border rounded px-3 py-2" type="password" placeholder="Password" value={password} onChange={(e) => setPassword(e.target.value)} required />
+    <main className="min-h-screen flex items-center justify-center bg-ink-50 p-4">
+      <form onSubmit={submit} className="w-full max-w-sm bg-white rounded-xl shadow-md border border-ink-100 p-8 space-y-5">
+        <Logo className="h-14 w-auto mx-auto" />
+        <div className="text-center space-y-1">
+          <h1 className="text-xl font-bold text-ink-900">Altira Dashboard</h1>
+          <p className="text-sm text-ink-400">Sign in with your email and password.</p>
+        </div>
+        <input className="field w-full" type="email" placeholder="Email" value={email} onChange={(e) => setEmail(e.target.value)} required />
+        <input className="field w-full" type="password" placeholder="Password" value={password} onChange={(e) => setPassword(e.target.value)} required />
         {err && <p className="text-sm text-red-600">{err}</p>}
-        <button disabled={busy} className="w-full bg-slate-900 text-white rounded py-2 disabled:opacity-50">{busy ? "Signing in..." : "Sign in"}</button>
+        <button disabled={busy} className="btn-primary w-full py-2.5">{busy ? "Signing in..." : "Sign in"}</button>
       </form>
     </main>
   );

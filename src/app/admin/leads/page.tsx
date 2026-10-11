@@ -25,8 +25,9 @@ export default async function Leads({ searchParams }: { searchParams: Record<str
   const csvQs = params({ page: "" });
 
   return (
-    <div className="space-y-4">
-      <form className="card grid sm:grid-cols-3 lg:grid-cols-4 gap-2 text-sm">
+    <div className="space-y-6">
+      <h1 className="page-title">Leads</h1>
+      <form className="card grid sm:grid-cols-3 lg:grid-cols-4 gap-3 text-sm">
         <input name="q" defaultValue={sp.q} placeholder="Search name / email / phone" className="field" />
         <select name="host" defaultValue={sp.host ?? ""} className="field">
           <option value="">All hosts</option>{(hosts ?? []).map((h: any) => <option key={h.email} value={h.email}>{h.display_name || h.name}</option>)}
@@ -44,17 +45,17 @@ export default async function Leads({ searchParams }: { searchParams: Record<str
           <a href={`/api/admin/leads-csv?${csvQs}`} className="link">CSV</a>
         </div>
       </form>
-      <p className="text-sm text-ink-400">{count ?? 0} results</p>
-      <div className="space-y-2">
+      <p className="text-sm text-ink-400 font-medium">{count ?? 0} results</p>
+      <div className="space-y-3">
         {leads.map((l) => (
           <details key={l.id} className="card">
-            <summary className="cursor-pointer flex flex-wrap gap-3 items-center">
-              <b>{l.name ?? l.email}</b><StatusBadge s={l.status} />
+            <summary className="cursor-pointer flex flex-wrap gap-3 items-center text-base">
+              <b className="text-ink-900">{l.name ?? l.email}</b><StatusBadge s={l.status} />
               <span className="text-ink-400">{l.event_name ?? "no event"}</span>
               <span>{l.host_name ?? "no host"}</span>
               <span className="text-ink-400">{l.call_start ? fmtDateTime(l.call_start) : `form: ${fmtDateTime(l.submitted_at)}`}</span>
             </summary>
-            <div className="mt-3"><LeadDetails l={l} /></div>
+            <div className="mt-4 pt-4 border-t border-ink-100"><LeadDetails l={l} /></div>
           </details>
         ))}
         {leads.length === 0 && <p className="text-sm text-ink-400">No leads match.</p>}

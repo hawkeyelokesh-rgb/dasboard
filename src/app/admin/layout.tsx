@@ -11,14 +11,14 @@ export default async function AdminLayout({ children }: { children: React.ReactN
   return (
     <div className="min-h-screen bg-ink-50">
       <header className="bg-white border-b border-ink-100">
-        <div className="max-w-6xl mx-auto px-4 py-3 flex flex-wrap items-center gap-4">
-          <Logo />
+        <div className="max-w-6xl mx-auto px-6 py-4 flex flex-wrap items-center gap-6">
+          <Logo className="h-11 w-auto" />
           <NavLinks items={nav} />
           <span className="text-sm text-ink-400">{p.email}</span>
           <SignOut />
         </div>
       </header>
-      <main className="max-w-6xl mx-auto p-4">{children}</main>
+      <main className="max-w-6xl mx-auto p-6 space-y-6">{children}</main>
     </div>
   );
 }

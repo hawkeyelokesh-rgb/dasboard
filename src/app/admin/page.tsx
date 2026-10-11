@@ -27,28 +27,29 @@ export default async function Overview() {
   const stats = [["All leads", total], ["Filled form, not booked", notBooked], ["Meetings today", todayN], ["Meetings next 7 days", week]];
   return (
     <div className="space-y-6">
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+      <h1 className="page-title">Overview</h1>
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         {stats.map(([t, n]) => (
-          <div key={t as string} className="card border-t-2 border-t-gold-500">
-            <div className="text-2xl font-semibold text-ink-900">{n}</div>
-            <div className="text-sm text-ink-400">{t}</div>
+          <div key={t as string} className="card border-t-4 border-t-gold-500">
+            <div className="text-4xl font-bold text-ink-900">{n}</div>
+            <div className="text-sm text-ink-400 mt-1">{t}</div>
           </div>
         ))}
       </div>
       <section className="card">
-        <h2 className="font-semibold mb-3 text-ink-900">Today's meetings</h2>
+        <h2 className="card-title">Today's meetings</h2>
         {(todays ?? []).length === 0 ? <p className="text-sm text-ink-400">None.</p> : (
-          <table className="w-full text-sm"><tbody>
+          <table className="data-table"><tbody>
             {todays!.map((m: any) => (
-              <tr key={m.id} className="border-t border-ink-100"><td className="py-2 pr-3">{fmtTime(m.call_start)}</td><td className="pr-3">{m.name}</td><td className="pr-3">{m.event_name}</td><td className="pr-3">{m.host_name}</td><td><StatusBadge s={m.status} /></td></tr>
+              <tr key={m.id}><td className="font-medium">{fmtTime(m.call_start)}</td><td>{m.name}</td><td className="text-ink-400">{m.event_name}</td><td>{m.host_name}</td><td><StatusBadge s={m.status} /></td></tr>
             ))}
           </tbody></table>
         )}
       </section>
       <section className="card">
-        <h2 className="font-semibold mb-3 text-ink-900">Meetings per host (next 7 days)</h2>
+        <h2 className="card-title">Meetings per host (next 7 days)</h2>
         {Object.keys(perHost).length === 0 ? <p className="text-sm text-ink-400">None.</p> : (
-          <ul className="text-sm space-y-1">{Object.entries(perHost).sort((a, b) => b[1] - a[1]).map(([h, n]) => <li key={h}>{h}: <b>{n}</b></li>)}</ul>
+          <ul className="text-sm divide-y divide-ink-100">{Object.entries(perHost).sort((a, b) => b[1] - a[1]).map(([h, n]) => <li key={h} className="flex justify-between py-2"><span>{h}</span><b className="text-ink-900">{n}</b></li>)}</ul>
         )}
       </section>
     </div>
