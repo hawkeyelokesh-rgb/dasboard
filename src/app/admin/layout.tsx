@@ -10,7 +10,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
   const nav: [string, string][] = [["/admin", "Overview"], ["/admin/availability", "Availability"], ["/admin/leads", "Leads"], ["/admin/team", "Team"]];
   return (
     <div className="min-h-screen bg-ink-50">
-      <header className="bg-white border-b border-ink-100">
+      <header className="sticky top-0 z-10 bg-white border-b border-ink-100">
         <div className="max-w-6xl mx-auto px-6 py-4 flex flex-wrap items-center gap-6">
           <Logo className="h-11 w-auto" />
           <NavLinks items={nav} />

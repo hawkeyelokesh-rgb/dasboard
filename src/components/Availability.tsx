@@ -31,7 +31,10 @@ export default function Availability({ today }: { today: string }) {
       <div className="grid md:grid-cols-2 gap-4">
         {data?.hosts.map((h: any) => (
           <div key={h.host.id} className="card space-y-2">
-            <b className="text-lg text-ink-900">{h.host.name}</b>
+            <div className="flex items-center justify-between">
+              <b className="text-lg text-ink-900">{h.host.name}</b>
+              <span className="badge bg-gold-100 text-gold-700">{h.bookings.length} booked</span>
+            </div>
             {h.bookings.length > 0 ? (
               <div className="text-sm space-y-1 divide-y divide-ink-100">
                 {h.bookings.map((b: any) => <div key={b.id} className="py-1.5">{t(Date.parse(b.call_start))} · {b.name} · {b.event_name}</div>)}
