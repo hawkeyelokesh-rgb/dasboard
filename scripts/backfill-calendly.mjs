@@ -18,11 +18,14 @@ import path from "path";
 const ROOT = path.dirname(path.dirname(fileURLToPath(import.meta.url)));
 
 function loadEnv() {
-  const text = readFileSync(path.join(ROOT, ".env"), "utf8");
   const env = {};
-  for (const line of text.split("\n")) {
-    const m = line.match(/^([A-Z0-9_]+)=(.*)$/);
-    if (m) env[m[1]] = m[2].trim();
+  for (const file of [".env", ".env.local"]) {
+    let text;
+    try { text = readFileSync(path.join(ROOT, file), "utf8"); } catch { continue; }
+    for (const line of text.split("\n")) {
+      const m = line.match(/^([A-Z0-9_]+)=(.*)$/);
+      if (m) env[m[1]] = m[2].trim();
+    }
   }
   return env;
 }
@@ -45,7 +48,10 @@ const LIMIT = limitIdx >= 0 ? Number(args[limitIdx + 1]) : Infinity;
 const formIdx = args.indexOf("--form");
 const ONLY_FORM = formIdx >= 0 ? args[formIdx + 1].toLowerCase() : null;
 
-const FORM_NAMES = ["Altira Qualified Form", "Organic Route With Robin"];
+// "Altira Qualified Form" is a 2-question pre-screen that routes externally and never
+// collects name/email -- there's nothing in it to turn into a contactable lead, so it's
+// excluded here. Pass --form "Altira Qualified Form" explicitly if you ever need it anyway.
+const FORM_NAMES = ["Organic Route With Robin"];
 
 // ---------- rate-limited Calendly fetch (conservative: ~5 req/sec, retry on 429) ----------
 let lastCall = 0;
@@ -115,28 +121,39 @@ async function upsertLeads(rows) {
   if (!res.ok) throw new Error(`Supabase upsert ${res.status}: ${(await res.text()).slice(0, 500)}`);
 }
 
-async function resolveBooking(submission) {
-  // submission.submitter_type === "Invitee" means this submission led to a scheduled booking.
-  if (submission.submitter_type !== "Invitee" || !submission.submitter) return null;
-  const inv = (await calendlyFetch(submission.submitter)).resource;
-  const seUri = inv.scheduled_event ?? inv.event;
-  if (!seUri) return null;
-  const se = (await calendlyFetch(seUri)).resource;
-  const host = se.event_memberships?.[0];
+// Calendly's routing_form_submissions don't link to the resulting booking (submitter/
+// submitter_type are always null on this account) -- so instead, for each submission's
+// email we look up that person's scheduled events directly and pick the one created
+// closest in time to the submission. `claimedEvents` stops two different submissions
+// from the same email grabbing the same booking.
+const claimedEvents = new Set();
+
+async function resolveBooking(org, email, submittedAtMs) {
+  if (!email) return null;
+  const qs = new URLSearchParams({ organization: org, invitee_email: email, count: "25" });
+  const page = await calendlyFetch(`https://api.calendly.com/scheduled_events?${qs}`);
+  let best = null, bestDiff = Infinity;
+  for (const se of page.collection) {
+    if (claimedEvents.has(se.uri)) continue;
+    const diff = Math.abs(new Date(se.created_at).getTime() - submittedAtMs);
+    if (diff < bestDiff) { best = se; bestDiff = diff; }
+  }
+  if (!best) return null;
+  claimedEvents.add(best.uri);
+  const host = best.event_memberships?.[0];
   return {
-    invitee_uri: submission.submitter,
-    event_uri: se.uri,
-    event_name: se.name ?? null,
+    event_uri: best.uri,
+    event_name: best.name ?? null,
     host_name: host?.user_name ?? null,
     host_email: host?.user_email ? String(host.user_email).toLowerCase() : null,
-    call_start: se.start_time ?? null,
-    call_end: se.end_time ?? null,
-    meeting_url: se.location?.join_url ?? null,
-    status: inv.status === "canceled" ? "canceled" : "booked",
+    call_start: best.start_time ?? null,
+    call_end: best.end_time ?? null,
+    meeting_url: best.location?.join_url ?? null,
+    status: best.status === "canceled" ? "canceled" : "booked",
   };
 }
 
-async function backfillForm(formUri, formName) {
+async function backfillForm(org, formUri, formName) {
   console.log(`\n=== ${formName} ===`);
   let pageToken;
   let processed = 0, booked = 0, canceled = 0, submittedOnly = 0, errors = 0;
@@ -157,9 +174,13 @@ async function backfillForm(formUri, formName) {
         answers: qa,
         routed_to: sub.result?.value ?? null,
         status: "submitted",
+        // Bulk upsert requires every row to have the same keys; these fill in once a
+        // booking is found below, otherwise stay null.
+        event_uri: null, event_name: null, host_name: null, host_email: null,
+        call_start: null, call_end: null, meeting_url: null,
       };
       try {
-        const booking = await resolveBooking(sub);
+        const booking = await resolveBooking(org, row.email, new Date(sub.created_at).getTime());
         if (booking) Object.assign(row, booking);
       } catch (e) {
         errors++;
@@ -198,7 +219,7 @@ async function main() {
     console.error(`No routing forms matched. Available forms: ${forms.map((f) => f.name).join(", ")}`);
     process.exit(1);
   }
-  for (const f of matched) await backfillForm(f.uri, f.name);
+  for (const f of matched) await backfillForm(me.current_organization, f.uri, f.name);
   console.log("\nAll done.");
 }
 
