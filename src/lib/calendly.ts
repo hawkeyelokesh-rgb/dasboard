@@ -45,9 +45,9 @@ export async function getActiveInvitee(eventUri: string) {
   return res.collection[0] ?? null;
 }
 
-/** Cancels a booking via Calendly's API (not just our own status field). */
-export async function cancelInvitee(invitee: { uri: string }, reason: string) {
-  await calendlyUrl(`${invitee.uri}/cancellation`, { method: "POST", body: { reason } });
+/** Cancels a booking via Calendly's API (not just our own status field). Cancellation is an event-level action. */
+export async function cancelEvent(eventUri: string, reason: string) {
+  await calendlyUrl(`${eventUri}/cancellation`, { method: "POST", body: { reason } });
 }
 
 export async function getMe() {

@@ -44,6 +44,8 @@ function MeetingActions({ id }: { id: string }) {
   const router = useRouter();
   const [busy, setBusy] = useState<"cancel" | "reschedule" | null>(null);
   const [msg, setMsg] = useState("");
+  const [showCancelForm, setShowCancelForm] = useState(false);
+  const [reason, setReason] = useState("");
 
   async function post(url: string, body: unknown) {
     const r = await fetch(url, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
@@ -58,23 +60,40 @@ function MeetingActions({ id }: { id: string }) {
     if (ok) window.open(j.url, "_blank"); else setMsg(j.error ?? "Failed to get reschedule link.");
   }
 
-  async function cancelMeeting() {
-    if (!confirm("Cancel this meeting in Calendly? This cannot be undone.")) return;
+  async function confirmCancel() {
+    if (!reason.trim()) return;
     setBusy("cancel"); setMsg("");
-    const { ok, j } = await post("/api/leads/cancel", { id });
+    const { ok, j } = await post("/api/leads/cancel", { id, reason: reason.trim() });
     setBusy(null);
-    if (ok) router.refresh(); else setMsg(j.error ?? "Failed to cancel.");
+    if (ok) { setShowCancelForm(false); router.refresh(); } else setMsg(j.error ?? "Failed to cancel.");
   }
 
   return (
-    <div className="flex flex-wrap items-center gap-3 pt-2 border-t border-ink-100" onClick={(e) => e.stopPropagation()}>
-      <button className="btn-ghost border border-ink-100" disabled={busy !== null} onClick={reschedule}>
-        {busy === "reschedule" ? "Opening..." : "Reschedule"}
-      </button>
-      <button className="btn-ghost border border-red-200 text-red-700 hover:bg-red-50" disabled={busy !== null} onClick={cancelMeeting}>
-        {busy === "cancel" ? "Canceling..." : "Cancel meeting"}
-      </button>
-      {msg && <span className="text-sm text-red-600">{msg}</span>}
+    <div className="pt-2 border-t border-ink-100" onClick={(e) => e.stopPropagation()}>
+      {!showCancelForm ? (
+        <div className="flex flex-wrap items-center gap-3">
+          <button className="btn-ghost border border-ink-100" disabled={busy !== null} onClick={reschedule}>
+            {busy === "reschedule" ? "Opening..." : "Reschedule"}
+          </button>
+          <button className="btn-ghost border border-red-200 text-red-700 hover:bg-red-50" onClick={() => { setShowCancelForm(true); setMsg(""); }}>
+            Cancel meeting
+          </button>
+          {msg && <span className="text-sm text-red-600">{msg}</span>}
+        </div>
+      ) : (
+        <div className="space-y-2 max-w-md">
+          <label className="text-sm font-medium text-ink-900">Why is this meeting being canceled?</label>
+          <textarea className="field w-full" rows={2} placeholder="e.g. Client requested, no longer interested, duplicate booking..."
+            value={reason} onChange={(e) => setReason(e.target.value)} disabled={busy !== null} autoFocus />
+          <div className="flex items-center gap-3">
+            <button className="btn-primary bg-red-700 hover:bg-red-800" disabled={busy !== null || !reason.trim()} onClick={confirmCancel}>
+              {busy === "cancel" ? "Canceling..." : "Confirm cancellation"}
+            </button>
+            <button className="link text-sm text-ink-400" disabled={busy !== null} onClick={() => { setShowCancelForm(false); setReason(""); setMsg(""); }}>Back</button>
+          </div>
+          {msg && <p className="text-sm text-red-600">{msg}</p>}
+        </div>
+      )}
     </div>
   );
 }
