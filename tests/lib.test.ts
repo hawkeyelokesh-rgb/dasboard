@@ -131,4 +131,14 @@ describe("webhook flow", () => {
     expect(s.rows).toHaveLength(2);
     expect(s.rows[1].status).toBe("submitted");
   });
+  it("ignores a pre-screening form submission with no email", async () => {
+    const s = memStore();
+    const noEmail = { event: "routing_form_submission.created", payload: {
+      uri: "https://api.calendly.com/routing_form_submissions/S2", created_at: "2026-10-13T04:00:00Z",
+      questions_and_answers: [{ question: "Please choose one", answer: "I can arrange ₹50,000 now." }],
+      result: { type: "no_match", value: null },
+    } };
+    expect(await handleCalendlyEvent(noEmail, s)).toBe("ignored_no_email");
+    expect(s.rows).toHaveLength(0);
+  });
 });

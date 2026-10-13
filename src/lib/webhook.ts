@@ -22,6 +22,9 @@ export async function handleCalendlyEvent(env: CalendlyEnvelope, store: LeadStor
     if (p.uri && (await store.findBySubmission(p.uri))) return "duplicate_submission";
     const qa = (p.questions_and_answers ?? []) as QA[];
     const m = mapAnswers(qa);
+    // Pre-screening/qualifier forms (e.g. a yes/no capital check before the real form)
+    // never collect an email, so there's nothing to turn into a contactable lead.
+    if (!m.email) return "ignored_no_email";
     await store.insert({
       submission_uri: p.uri ?? null,
       submitted_at: p.created_at ?? env.created_at ?? new Date().toISOString(),
