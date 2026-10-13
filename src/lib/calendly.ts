@@ -26,6 +26,30 @@ export async function calendly<T = any>(
   return text ? JSON.parse(text) : ({} as T);
 }
 
+/** Same as `calendly()` but takes a full URL (the `event_uri`/`invitee_uri` values we store are already full Calendly API URLs). */
+async function calendlyUrl<T = any>(url: string, opts: { method?: string; body?: unknown } = {}): Promise<T> {
+  const res = await fetch(url, {
+    method: opts.method ?? "GET",
+    headers: { Authorization: `Bearer ${token()}`, "Content-Type": "application/json" },
+    body: opts.body ? JSON.stringify(opts.body) : undefined,
+    cache: "no-store",
+  });
+  const text = await res.text();
+  if (!res.ok) throw new Error(`Calendly ${res.status} ${url}: ${text.slice(0, 300)}`);
+  return text ? JSON.parse(text) : ({} as T);
+}
+
+/** The active invitee on a scheduled event -- has `cancel_url`, `reschedule_url`, and `uri` (used to cancel via API). */
+export async function getActiveInvitee(eventUri: string) {
+  const res = await calendlyUrl<{ collection: any[] }>(`${eventUri}/invitees?status=active&count=1`);
+  return res.collection[0] ?? null;
+}
+
+/** Cancels a booking via Calendly's API (not just our own status field). */
+export async function cancelInvitee(invitee: { uri: string }, reason: string) {
+  await calendlyUrl(`${invitee.uri}/cancellation`, { method: "POST", body: { reason } });
+}
+
 export async function getMe() {
   return (await calendly<{ resource: { uri: string; name: string; email: string; current_organization: string } }>("/users/me")).resource;
 }

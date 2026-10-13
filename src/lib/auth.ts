@@ -24,3 +24,12 @@ export async function adminOrNull(): Promise<Profile | null> {
   const p = await getProfile();
   return p && p.role === "admin" ? p : null;
 }
+
+/** For API routes acting on one lead: admin can manage any lead, a host only their own. */
+export async function canManageLeadOrNull(hostEmail: string | null): Promise<Profile | null> {
+  const p = await getProfile();
+  if (!p) return null;
+  if (p.role === "admin") return p;
+  if (hostEmail && p.email.toLowerCase() === hostEmail.toLowerCase()) return p;
+  return null;
+}
