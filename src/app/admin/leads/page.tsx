@@ -11,10 +11,14 @@ export default async function Leads({ searchParams }: { searchParams: Record<str
   const sp = searchParams;
   const page = Math.max(1, Number(sp.page) || 1);
   const db = serverClient();
-  const f = { q: sp.q, host: sp.host, status: sp.status, event: sp.event, submittedFrom: sp.from, submittedTo: sp.to, callDate: sp.call };
+  const f = { q: sp.q, host: sp.host, status: sp.status, event: sp.event, investment: sp.investment, submittedFrom: sp.from, submittedTo: sp.to, callDate: sp.call };
   const { data, count } = await applyLeadFilters(
     db.from("leads").select("*", { count: "exact" }).order("submitted_at", { ascending: false }).range((page - 1) * PAGE, page * PAGE - 1), f);
   const { data: hosts } = await db.from("hosts").select("name,display_name,email").order("name");
+  const { data: investmentRows } = await db.from("leads").select("investment").not("investment", "is", null);
+  const INVESTMENT_ORDER = ["30,000 - 50,000", "50,000 - 75,000", "75,000 - 1 L", "1 L- 3 L", "3 L - 5 L", "5 lakh above"];
+  const investments = [...new Set((investmentRows ?? []).map((r: any) => r.investment as string))]
+    .sort((a, b) => { const ia = INVESTMENT_ORDER.indexOf(a), ib = INVESTMENT_ORDER.indexOf(b); return ia === -1 || ib === -1 ? a.localeCompare(b) : ia - ib; });
   const leads = (data ?? []) as Lead[];
   const pages = Math.max(1, Math.ceil((count ?? 0) / PAGE));
   const params = (over: Record<string, string>) => {
@@ -34,6 +38,9 @@ export default async function Leads({ searchParams }: { searchParams: Record<str
         </select>
         <select name="status" defaultValue={sp.status ?? ""} className="field">
           <option value="">Any status</option><option value="submitted">Not booked</option><option value="booked">Booked</option><option value="canceled">Canceled</option>
+        </select>
+        <select name="investment" defaultValue={sp.investment ?? ""} className="field">
+          <option value="">Any investment capacity</option>{investments.map((v) => <option key={v} value={v}>{v}</option>)}
         </select>
         <input name="event" defaultValue={sp.event} placeholder="Event name" className="field" />
         <label className="flex items-center gap-1">Submitted from <input type="date" name="from" defaultValue={sp.from} className="field" /></label>

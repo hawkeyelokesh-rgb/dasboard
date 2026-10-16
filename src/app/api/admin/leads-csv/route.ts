@@ -15,7 +15,7 @@ export async function GET(req: Request) {
   const g = (k: string) => sp.get(k) || undefined;
   const db = serverClient();
   const q = applyLeadFilters(db.from("leads").select(KEYS.join(",")).order("submitted_at", { ascending: false }).limit(10000), {
-    q: g("q"), host: g("host"), status: g("status"), event: g("event"),
+    q: g("q"), host: g("host"), status: g("status"), event: g("event"), investment: g("investment"),
     submittedFrom: g("from"), submittedTo: g("to"), callDate: g("call"),
   });
   const { data, error } = await q;

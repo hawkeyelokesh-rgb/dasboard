@@ -1,7 +1,7 @@
 import { istDayBounds } from "./format";
 
 export type LeadFilters = {
-  q?: string; host?: string; status?: string; event?: string;
+  q?: string; host?: string; status?: string; event?: string; investment?: string;
   submittedFrom?: string; submittedTo?: string; callDate?: string;
 };
 
@@ -10,6 +10,7 @@ export function applyLeadFilters<T extends { [k: string]: any }>(query: T, f: Le
   let q: any = query;
   if (f.status) q = q.eq("status", f.status);
   if (f.host) q = q.eq("host_email", f.host.toLowerCase());
+  if (f.investment) q = q.eq("investment", f.investment);
   if (f.event) q = q.ilike("event_name", `%${f.event.replace(/[%_]/g, "")}%`);
   if (f.q) {
     const s = f.q.replace(/[%,()_]/g, " ").trim();
